@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LabLLM — AI Research Assistant for PhD Students</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1c1a17;
+  --paper: #f4efe4;
+  --cream: #ece6d5;
+  --card: #faf7f0;
+  --border: #d8cfbb;
+  --muted: #8a7f6e;
+  --amber: #c07c2e;
+  --amber-pale: #f0e0c0;
+  --sage: #5a7a5c;
+  --sage-pale: #ddeadd;
+  --rust: #9e4a35;
+  --rust-pale: #f0ddd8;
+  --blue: #3a5f8a;
+  --blue-pale: #d8e4f0;
+  --mono: 'DM Mono', monospace;
+  --serif: 'Fraunces', Georgia, serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--serif);
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  line-height: 1.7;
+}
+
+/* ─── HEADER ─── */
+header {
+  background: var(--ink);
+  padding: 1.2rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  border-bottom: 2px solid var(--amber);
+}
+
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.logo-name {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 1.15rem;
+  color: var(--amber);
+  letter-spacing: -0.02em;
+}
+
+.logo-tag {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: #5a5248;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.header-pills {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.pill {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.65rem;
+  border-radius: 2px;
+  border: 1px solid #3a3530;
+  color: #6a6058;
+}
+
+/* ─── NAV ─── */
+nav {
+  background: var(--cream);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+nav::-webkit-scrollbar { display: none; }
+
+.tab-btn {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.9rem 1.4rem;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.tab-btn .tab-icon { font-size: 0.9rem; }
+.tab-btn:hover { color: var(--ink); background: rgba(0,0,0,0.03); }
+.tab-btn.active { color: var(--ink); border-bottom-color: var(--amber); background: var(--paper); }
+
+/* ─── MAIN ─── */
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2.5rem 2rem 5rem;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active {
+  display: block;
+  animation: fadeUp 0.25s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── SECTION INTRO ─── */
+.section-intro {
+  margin-bottom: 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 0.6rem;
+}
+
+.section-title {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 300;
+  line-height: 1.2;
+  margin-bottom: 0.8rem;
+}
+
+.section-title em { font-style: italic; color: var(--amber); }
+
+.section-desc {
+  font-size: 0.95rem;
+  color: var(--muted);
+  max-width: 600px;
+  font-weight: 300;
+}
+
+/* ─── CARDS ─── */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2.5rem;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1.5rem;
+  transition: box-shadow 0.2s, transform 0.2s;
+  position: relative;
+}
+
+.card:hover {
+  box-shadow: 3px 3px 0 var(--amber);
+  transform: translate(-1.5px, -1.5px);
+}
+
+.card-chip {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.18rem 0.5rem;
+  border-radius: 2px;
+  margin-bottom: 0.75rem;
+}
+
+.chip-green { background: var(--sage-pale); color: var(--sage); }
+.chip-amber { background: var(--amber-pale); color: var(--amber); }
+.chip-red   { background: var(--rust-pale);  color: var(--rust); }
+.chip-blue  { background: var(--blue-pale);  color: var(--blue); }
+.chip-mono  { background: var(--cream); color: var(--muted); }
+
+.card-icon { font-size: 1.4rem; margin-bottom: 0.6rem; display: block; }
+
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: var(--ink);
+}
+
+.card-body {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.65;
+  font-weight: 300;
+}
+
+/* ─── PROMPT EXAMPLE BLOCKS ─── */
+.prompt-section { margin-bottom: 2.5rem; }
+
+.prompt-section-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.prompt-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.prompt-example {
+  background: var(--ink);
+  border-radius: 3px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.prompt-label {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 0.5rem;
+}
+
+.prompt-text {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: #d4cfc5;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: #2e2b26;
+  color: #6a6058;
+  border: 1px solid #3a3530;
+  padding: 0.25rem 0.6rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.copy-btn:hover { background: #3a3530; color: var(--amber); }
+.copy-btn.copied { color: var(--sage); }
+
+/* ─── CALLOUT BOX ─── */
+.callout {
+  border-left: 3px solid var(--amber);
+  background: var(--amber-pale);
+  padding: 1rem 1.25rem;
+  border-radius: 0 3px 3px 0;
+  margin-bottom: 1.5rem;
+}
+
+.callout.green { border-color: var(--sage); background: var(--sage-pale); }
+.callout.red   { border-color: var(--rust); background: var(--rust-pale); }
+.callout.blue  { border-color: var(--blue); background: var(--blue-pale); }
+
+.callout-title {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 0.4rem;
+}
+
+.callout.green .callout-title { color: var(--sage); }
+.callout.red   .callout-title { color: var(--rust); }
+.callout.blue  .callout-title { color: var(--blue); }
+
+.callout-body {
+  font-size: 0.85rem;
+  color: var(--ink);
+  line-height: 1.65;
+  font-weight: 300;
+}
+
+/* ─── TOOL CHIPS ─── */
+.tool-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tool-chip {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  padding: 0.35rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--card);
+  color: var(--ink);
+  cursor: default;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.tool-chip:hover { background: var(--amber-pale); border-color: var(--amber); }
+
+/* ─── TABLE ─── */
+.method-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin-bottom: 2.5rem;
+}
+
+.method-table th {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: left;
+  padding: 0.6rem 1rem;
+  border-bottom: 2px solid var(--border);
+  background: var(--cream);
+}
+
+.method-table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--ink);
+  font-weight: 300;
+  line-height: 1.55;
+}
+
+.method-table tr:hover td { background: var(--amber-pale); }
+
+.fit-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.fit-high   { background: var(--sage-pale);  color: var(--sage); }
+.fit-medium { background: var(--amber-pale); color: var(--amber); }
+.fit-low    { background: var(--rust-pale);  color: var(--rust); }
+
+/* ─── LIVE AI AREA ─── */
+.ai-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.ai-box-header {
+  background: var(--ink);
+  padding: 0.7rem 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ai-box-title {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--amber);
+}
+
+.ai-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--sage);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.ai-body { padding: 1.25rem; }
+
+.api-key-row {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+.api-key-label {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.api-key-input {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--ink);
+  outline: none;
+}
+
+.api-key-input:focus { border-color: var(--amber); }
+
+.system-row {
+  margin-bottom: 0.75rem;
+}
+
+.input-label {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+  display: block;
+}
+
+.prompt-textarea, .system-textarea {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--ink);
+  resize: vertical;
+  outline: none;
+  line-height: 1.6;
+  transition: border-color 0.15s;
+}
+
+.prompt-textarea:focus, .system-textarea:focus { border-color: var(--amber); }
+
+.ai-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.run-btn {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.55rem 1.3rem;
+  background: var(--ink);
+  color: var(--amber);
+  border: 1px solid var(--amber);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.run-btn:hover { background: var(--amber); color: var(--ink); }
+.run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.clear-btn {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.5rem 1rem;
+  background: none;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.clear-btn:hover { color: var(--ink); border-color: var(--ink); }
+
+.token-note {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  margin-left: auto;
+}
+
+.ai-response {
+  margin-top: 1rem;
+  background: var(--ink);
+  border-radius: 3px;
+  padding: 1.25rem;
+  min-height: 80px;
+  display: none;
+}
+
+.ai-response.visible { display: block; }
+
+.response-label {
+  font-family: var(--mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 0.6rem;
+}
+
+.response-text {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: #d4cfc5;
+  line-height: 1.75;
+  white-space: pre-wrap;
+}
+
+.response-text.loading {
+  color: #5a5248;
+  font-style: italic;
+}
+
+/* ─── QUICK-LOAD PRESET BUTTONS ─── */
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.preset-btn {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  padding: 0.35rem 0.8rem;
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.preset-btn:hover { background: var(--amber-pale); border-color: var(--amber); color: var(--ink); }
+
+/* ─── CONCEPT EXPLAINER (Methodology) ─── */
+.concept-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 600px) {
+  .concept-row { grid-template-columns: 1fr; }
+  .card-grid { grid-template-columns: 1fr; }
+  header { padding: 1rem 1.25rem; }
+  main { padding: 1.5rem 1rem 4rem; }
+  nav { padding: 0 0.5rem; }
+}
+
+.concept-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1.25rem;
+}
+
+.concept-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.concept-body {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+.concept-fit {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+/* ─── STEP LIST ─── */
+.step-list {
+  counter-reset: steps;
+  list-style: none;
+  margin-bottom: 2rem;
+}
+
+.step-list li {
+  counter-increment: steps;
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+  font-size: 0.88rem;
+}
+
+.step-list li::before {
+  content: counter(steps, decimal-leading-zero);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--amber);
+  min-width: 2rem;
+  padding-top: 0.15rem;
+  font-weight: 500;
+}
+
+.step-body { font-weight: 300; color: var(--muted); line-height: 1.6; }
+.step-body strong { color: var(--ink); font-weight: 600; }
+
+/* ─── GRANT / PRIVACY SPECIFIC ─── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 600px) { .two-col { grid-template-columns: 1fr; } }
+
+.info-block {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1.25rem;
+}
+
+.info-block-title {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+
+.info-block ul {
+  list-style: none;
+  font-size: 0.82rem;
+  font-weight: 300;
+  color: var(--ink);
+  line-height: 1.8;
+}
+
+.info-block ul li::before {
+  content: '— ';
+  color: var(--amber);
+  font-family: var(--mono);
+}
+
+/* ─── HORIZONTAL RULE ─── */
+hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+/* ─── FOOTER NOTE ─── */
+.foot-note {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+/* ─── PLAYGROUND SPECIFIC ─── */
+.pg-mode-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.mode-btn {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  padding: 0.4rem 0.9rem;
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mode-btn.active { background: var(--ink); color: var(--amber); border-color: var(--ink); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-name">LabLLM</span>
+    <span class="logo-tag">/ AI for Researchers</span>
+  </div>
+  <div class="header-pills">
+    <span class="pill">PhD & Postdoc</span>
+    <span class="pill">v1.0</span>
+  </div>
+</header>
+
+<nav>
+  <button class="tab-btn active" onclick="switchTab('lit')">
+    <span class="tab-icon">📄</span> Literature Review
+  </button>
+  <button class="tab-btn" onclick="switchTab('ethics')">
+    <span class="tab-icon">🔒</span> Ethics & Privacy
+  </button>
+  <button class="tab-btn" onclick="switchTab('viz')">
+    <span class="tab-icon">📊</span> Data & Viz
+  </button>
+  <button class="tab-btn" onclick="switchTab('method')">
+    <span class="tab-icon">🔬</span> Methodology
+  </button>
+  <button class="tab-btn" onclick="switchTab('grant')">
+    <span class="tab-icon">💸</span> Grant Writing
+  </button>
+  <button class="tab-btn" onclick="switchTab('playground')">
+    <span class="tab-icon">⚗️</span> Playground
+  </button>
+</nav>
+
+<main>
+
+<!-- ════════════════════════════════════════
+     TAB 1 — LITERATURE REVIEW
+════════════════════════════════════════ -->
+<div id="tab-lit" class="tab-panel active">
+  <div class="section-intro">
+    <div class="eyebrow">Tab 01 — Literature Review & Writing</div>
+    <h1 class="section-title">Use AI to <em>map</em> the field,<br>not to think for you.</h1>
+    <p class="section-desc">AI is genuinely useful for getting an overview, spotting patterns, and drafting structure. The intellectual argument stays yours. Here's how to use it well.</p>
+  </div>
+
+  <div class="callout">
+    <div class="callout-title">The golden rule</div>
+    <div class="callout-body">Always verify every claim, citation, and factual statement. LLMs hallucinate confidently. Use AI to <strong>scaffold</strong> your review, then fill it with real sources you've actually read.</div>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <span class="card-chip chip-green">Step 1</span>
+      <span class="card-icon">🗺️</span>
+      <div class="card-title">Map the landscape</div>
+      <div class="card-body">Ask the model to explain the major schools of thought, key debates, and foundational papers in your field. Use this as a starting map, not a finished picture.</div>
+    </div>
+    <div class="card">
+      <span class="card-chip chip-amber">Step 2</span>
+      <span class="card-icon">🔍</span>
+      <div class="card-title">Find your gaps</div>
+      <div class="card-body">Describe your research question and ask what's been studied, what's contested, and what's genuinely open. Good for generating search terms and framing your contribution.</div>
+    </div>
+    <div class="card">
+      <span class="card-chip chip-blue">Step 3</span>
+      <span class="card-icon">✍️</span>
+      <div class="card-title">Draft & restructure</div>
+      <div class="card-body">Paste in your bullet-point notes and ask the model to draft a coherent narrative. Then rewrite in your own voice. This is "AI as a scaffold," not ghostwriting.</div>
+    </div>
+    <div class="card">
+      <span class="card-chip chip-red">Watch out</span>
+      <span class="card-icon">⚠️</span>
+      <div class="card-title">Hallucinated citations</div>
+      <div class="card-body">Never trust a citation from an LLM without checking it. Fake papers, wrong authors, wrong years — it happens all the time. Use Semantic Scholar, Google Scholar, or Zotero to verify.</div>
+    </div>
+  </div>
+
+  <div class="prompt-section">
+    <div class="prompt-section-title">Prompt templates you can steal</div>
+
+    <div class="prompt-example">
+      <div class="prompt-label">Map a field</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">I'm a PhD student in [field]. Give me a structured overview of the main theoretical traditions, key debates, and 5–8 foundational papers in [specific topic]. For each tradition, note what it explains well and where it falls short.</div>
+    </div>
+
+    <div class="prompt-example">
+      <div class="prompt-label">Identify gaps</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">My research question is: [your question]. Based on what is typically covered in the literature on [topic], what are the most commonly cited gaps? What methodological approaches have been underused?</div>
+    </div>
+
+    <div class="prompt-example">
+      <div class="prompt-label">Synthesise your notes</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">Here are my notes on 5 papers on [topic]:
+[paste notes]
+
+Please synthesise these into a coherent 3-paragraph narrative that shows how the arguments relate and build on each other. Flag any tensions or contradictions you notice.</div>
+    </div>
+
+    <div class="prompt-example">
+      <div class="prompt-label">Improve your own draft</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">Here is a draft paragraph from my literature review:
+[paste paragraph]
+
+Please give me specific feedback on: (1) logical flow, (2) whether the argument is clearly structured, (3) any claims that seem unsupported. Do not rewrite it — just give feedback.</div>
+    </div>
+  </div>
+
+  <div class="callout green">
+    <div class="callout-title">Tools to combine with AI</div>
+    <div class="callout-body"><strong>Semantic Scholar</strong> and <strong>Connected Papers</strong> are excellent for finding real literature. Use AI to understand and synthesise; use these tools to find and verify. <strong>Zotero</strong> with the browser extension is the standard for managing sources.</div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     TAB 2 — ETHICS & PRIVACY
+════════════════════════════════════════ -->
+<div id="tab-ethics" class="tab-panel">
+  <div class="section-intro">
+    <div class="eyebrow">Tab 02 — Ethics & Privacy</div>
+    <h1 class="section-title">The stuff your <em>supervisor</em><br>will actually ask about.</h1>
+    <p class="section-desc">Using AI in research isn't plug-and-play. There are real questions about data privacy, authorship, transparency, and research integrity. This tab won't lecture you — it'll just flag what matters.</p>
+  </div>
+
+  <div class="two-col">
+    <div class="info-block">
+      <div class="info-block-title">🟢 Generally fine to do</div>
+      <ul>
+        <li>Use AI to draft or restructure your own text</li>
+        <li>Run publicly available datasets through AI tools</li>
+        <li>Use AI for literature mapping and search</li>
+        <li>Ask AI to explain methods or concepts to you</li>
+        <li>Use AI for code generation (cite it like a tool)</li>
+        <li>Run local/offline models on sensitive data</li>
+      </ul>
+    </div>
+    <div class="info-block">
+      <div class="info-block-title">🔴 Proceed with caution</div>
+      <ul>
+        <li>Uploading participant data to cloud AI tools</li>
+        <li>Submitting AI-generated text without disclosure</li>
+        <li>Using AI for qualitative coding without checking</li>
+        <li>Trusting AI analysis of sensitive documents</li>
+        <li>Using proprietary data in external LLM APIs</li>
+        <li>Listing AI as a co-author (most journals reject this)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout red">
+    <div class="callout-title">Privacy rule of thumb</div>
+    <div class="callout-body">If it's participant data, medical data, or anything covered by GDPR — <strong>do not upload it to ChatGPT, Claude.ai, or any cloud API</strong> without explicit legal clearance. Use a local model (Ollama + LLaMA 3, Mistral) instead. Your ethics approval probably doesn't cover third-party cloud processing.</div>
+  </div>
+
+  <hr>
+
+  <div class="prompt-section-title">Local LLMs for sensitive data</div>
+
+  <div class="card-grid">
+    <div class="card">
+      <span class="card-chip chip-green">Free & local</span>
+      <span class="card-icon">🦙</span>
+      <div class="card-title">Ollama + LLaMA 3</div>
+      <div class="card-body">Runs entirely on your laptop. No data leaves your machine. Install Ollama, pull llama3, run it from the terminal. Good enough for most research tasks.</div>
+    </div>
+    <div class="card">
+      <span class="card-chip chip-amber">Local GUI</span>
+      <span class="card-icon">🖥️</span>
+      <div class="card-title">LM Studio</div>
+      <div class="card-body">A desktop app for running local models with a ChatGPT-like interface. No coding needed. Works on Mac, Windows, Linux. Good for qualitative analysis of sensitive docs.</div>
+    </div>
+    <div class="card">
+      <span class="card-chip chip-blue">For coders</span>
+      <span class="card-icon">🐍</span>
+      <div class="card-title">Hugging Face Transformers</div>
+      <div class="card-body">Full programmatic control. Run models locally in Python. Steep learning curve but gives you the most flexibility for research pipelines.</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="prompt-section-title">Authorship & transparency</div>
+
+  <div class="callout blue">
+    <div class="callout-title">EU Guidelines say</div>
+    <div class="callout-body">The EU ERA Guidelines on Responsible Use of Generative AI in Research (2024) recommend: disclose which AI tools were used and how, do not list AI as an author, take full responsibility for AI-assisted content, and do not use AI to peer review confidential manuscripts.</div>
+  </div>
+
+  <div class="prompt-section">
+    <div class="prompt-section-title">Disclosure language templates</div>
+    <div class="prompt-example">
+      <div class="prompt-label">Methods section disclosure</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">Parts of this manuscript were drafted with the assistance of [model name, e.g. Claude 3.5 Sonnet], a large language model. All AI-generated content was reviewed, edited, and verified by the authors. The AI tool was not involved in data collection, analysis, or the intellectual framing of the research.</div>
+    </div>
+    <div class="prompt-example">
+      <div class="prompt-label">Ask AI to help you write the disclosure itself</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">I used AI assistance in the following ways during this research: [list]. Help me write a concise, honest disclosure statement suitable for a methods section in a [field] journal. It should be transparent without overstating the AI's role.</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     TAB 3 — DATA & VISUALISATION
+════════════════════════════════════════ -->
+<div id="tab-viz" class="tab-panel">
+  <div class="section-intro">
+    <div class="eyebrow">Tab 03 — Data, Visualization & Statistics</div>
+    <h1 class="section-title">From messy data<br>to <em>publication-ready</em> figures.</h1>
+    <p class="section-desc">AI is genuinely great at writing analysis code, explaining statistical output, and helping you choose the right visualisation. Here's how to use it without outsourcing your thinking.</p>
+  </div>
+
+  <div class="prompt-section-title">Recommended tools</div>
+  <div class="tool-list">
+    <span class="tool-chip">Python · pandas</span>
+    <span class="tool-chip">Python · matplotlib</span>
+    <span class="tool-chip">Python · seaborn</span>
+    <span class="tool-chip">Python · plotly</span>
+    <span class="tool-chip">R · ggplot2</span>
+    <span class="tool-chip">R · tidyr</span>
+    <span class="tool-chip">R · statsmodels</span>
+    <span class="tool-chip">Datawrapper</span>
+    <span class="tool-chip">Observable / D3.js</span>
+    <span class="tool-chip">JASP (GUI stats)</span>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <span class="card-chip chip-blue">Python</span>
+      <span class="card-icon">📦</span>
+      <div class="card-title">Generate analysis code</div>
+      <div class="card-body">Describe your dataset and what you want to do. Ask for working pandas/matplotlib or ggplot2 code. Always read and understand the code before running it — don't run blindly.</div>
+    </div>
+    <div class="card">
+      <span class="card-chip chip-green">Stats</span>
+      <span class="card-icon">📐</span>
+      <div class="card-title">Explain statistical output</div>
+      <div class="card-body">Paste your R or Python output and ask what it means. Great for interpreting p-values, confidence intervals, model diagnostics, or regression tables if you're unsure.</div>
+    </div>
+    <div class="card">
+      <span class="card-chip chip-amber">Viz</span>
+      <span class="card-icon">🎨</span>
+      <div class="card-title">Choose the right chart</div>
+      <div class="card-body">Describe your data (e.g. "two groups, continuous outcome, non-normal") and ask which chart type fits best and why. Also useful for accessibility and colour-blind-safe palettes.</div>
+    </div>
+    <div class="card">
+      <span class="card-chip chip-red">Caution</span>
+      <span class="card-icon">🧮</span>
+      <div class="card-title">Don't outsource interpretation</div>
+      <div class="card-body">AI can describe what statistical output says. It cannot tell you what it <em>means for your research question</em>. That interpretation is yours — that's the actual science.</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="prompt-section">
+    <div class="prompt-section-title">Prompt templates — data & viz</div>
+
+    <div class="prompt-example">
+      <div class="prompt-label">Generate Python visualisation code</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">I have a pandas DataFrame called `df` with columns: [list columns and types]. I want to create a [chart type] showing [what relationship]. Use matplotlib/seaborn, make it publication-ready (clean style, axis labels, no chartjunk), and use a colourblind-safe palette.</div>
+    </div>
+
+    <div class="prompt-example">
+      <div class="prompt-label">Generate R / ggplot2 code</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">I have an R dataframe called `df` with variables: [list]. I want a ggplot2 figure showing [what]. Use theme_minimal(), add axis labels and a title, and make it suitable for a journal submission (300dpi when exported).</div>
+    </div>
+
+    <div class="prompt-example">
+      <div class="prompt-label">Explain statistical output</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">Here is the output from a [test name, e.g. mixed ANOVA] in [R/Python/SPSS]:
+[paste output]
+
+Please explain: (1) what each value means, (2) how to report this in APA format, and (3) any assumptions I should check given this output.</div>
+    </div>
+
+    <div class="prompt-example">
+      <div class="prompt-label">Debug your code</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">This Python/R code gives me the following error:
+[paste error message]
+
+Here is the code:
+[paste code]
+
+What's wrong, and what's the fix? Explain why it happened.</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- LIVE AI BOX for viz -->
+  <div class="prompt-section-title">Try it live — generate code with AI</div>
+
+  <div class="ai-box">
+    <div class="ai-box-header">
+      <div class="ai-dot"></div>
+      <div class="ai-box-title">Live code generator · Claude API</div>
+    </div>
+    <div class="ai-body">
+      <div class="api-key-row">
+        <span class="api-key-label">API key</span>
+        <input type="password" class="api-key-input" id="viz-api-key" placeholder="sk-ant-api03-..." />
+      </div>
+
+      <div class="system-row">
+        <span class="input-label">Quick presets</span>
+        <div class="preset-row">
+          <button class="preset-btn" onclick="loadVizPreset('scatter')">scatter plot (Python)</button>
+          <button class="preset-btn" onclick="loadVizPreset('ggplot')">ggplot2 bar chart (R)</button>
+          <button class="preset-btn" onclick="loadVizPreset('heatmap')">correlation heatmap</button>
+          <button class="preset-btn" onclick="loadVizPreset('explain')">explain my stats output</button>
+        </div>
+      </div>
+
+      <div class="system-row">
+        <label class="input-label" for="viz-system">System context (optional — describe your data)</label>
+        <textarea class="system-textarea" id="viz-system" rows="2" placeholder="e.g. I'm working in Python with a pandas DataFrame called df. It has columns: age (int), score (float), group (str: 'control'/'treatment')."></textarea>
+      </div>
+
+      <label class="input-label" for="viz-prompt">Your prompt</label>
+      <textarea class="prompt-textarea" id="viz-prompt" rows="4" placeholder="Describe what you want to visualise or analyse..."></textarea>
+
+      <div class="ai-controls">
+        <button class="run-btn" id="viz-run-btn" onclick="runAI('viz')">▶ Run</button>
+        <button class="clear-btn" onclick="clearAI('viz')">Clear</button>
+        <span class="token-note">max 1000 tokens · results not saved</span>
+      </div>
+
+      <div class="ai-response" id="viz-response">
+        <div class="response-label">Response</div>
+        <div class="response-text" id="viz-response-text"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     TAB 4 — METHODOLOGY
+════════════════════════════════════════ -->
+<div id="tab-method" class="tab-panel">
+  <div class="section-intro">
+    <div class="eyebrow">Tab 04 — Methodology & Research Design</div>
+    <h1 class="section-title">AI for <em>which</em> kind<br>of research?</h1>
+    <p class="section-desc">Not all AI tools fit all research. This tab helps you figure out where AI genuinely adds value across qualitative, quantitative, and mixed-methods work — and where you should think twice.</p>
+  </div>
+
+  <table class="method-table">
+    <thead>
+      <tr>
+        <th>Method / Task</th>
+        <th>AI fit</th>
+        <th>How to use it</th>
+        <th>Watch out for</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Systematic literature review</strong></td>
+        <td><span class="fit-badge fit-high">High</span></td>
+        <td>Screening abstracts, drafting PRISMA summaries, organising themes</td>
+        <td>Hallucinated papers; always verify with real databases</td>
+      </tr>
+      <tr>
+        <td><strong>Qualitative coding (thematic analysis)</strong></td>
+        <td><span class="fit-badge fit-medium">Medium</span></td>
+        <td>Generating initial codes, checking inter-rater consistency, finding patterns in transcripts</td>
+        <td>AI codes surface patterns; you interpret meaning. Never skip human review.</td>
+      </tr>
+      <tr>
+        <td><strong>Quantitative data analysis</strong></td>
+        <td><span class="fit-badge fit-high">High</span></td>
+        <td>Writing analysis code, explaining output, choosing tests, debugging</td>
+        <td>AI can misread your data structure; always inspect code before running</td>
+      </tr>
+      <tr>
+        <td><strong>Survey design</strong></td>
+        <td><span class="fit-badge fit-high">High</span></td>
+        <td>Drafting items, checking for leading questions, translating scales, writing introductory text</td>
+        <td>AI doesn't know your population; pilot test anyway</td>
+      </tr>
+      <tr>
+        <td><strong>Interviews & ethnography</strong></td>
+        <td><span class="fit-badge fit-low">Low–Medium</span></td>
+        <td>Transcription cleanup, interview guide drafting, memo writing</td>
+        <td>AI cannot replace fieldwork judgment; use with caution on sensitive material</td>
+      </tr>
+      <tr>
+        <td><strong>Experimental design</strong></td>
+        <td><span class="fit-badge fit-medium">Medium</span></td>
+        <td>Power analysis code, counterbalancing schemes, protocol drafting</td>
+        <td>Always consult a statistician for novel designs; AI can get power calculations wrong</td>
+      </tr>
+      <tr>
+        <td><strong>Computational / NLP research</strong></td>
+        <td><span class="fit-badge fit-high">High</span></td>
+        <td>Scripting pipelines, model selection, interpreting evaluation metrics</td>
+        <td>Keeping up with latest methods — AI training data has a cutoff</td>
+      </tr>
+      <tr>
+        <td><strong>Clinical / biomedical research</strong></td>
+        <td><span class="fit-badge fit-low">Low</span></td>
+        <td>Background reading, protocol drafting, writing assistance</td>
+        <td>Never use cloud AI for patient data. Regulatory compliance is your responsibility.</td>
+      </tr>
+      <tr>
+        <td><strong>Historical / archival research</strong></td>
+        <td><span class="fit-badge fit-medium">Medium</span></td>
+        <td>OCR cleanup, translation assistance, contextualising sources</td>
+        <td>AI may not know niche historical contexts; factual errors likely</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <div class="prompt-section-title">Useful prompts by stage</div>
+
+  <div class="prompt-example">
+    <div class="prompt-label">Research design feedback</div>
+    <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+    <div class="prompt-text">Here is my research design:
+- Research question: [question]
+- Method: [method]
+- Data: [what you're collecting]
+- Analysis plan: [brief description]
+
+Please give me critical feedback on: (1) internal consistency, (2) potential validity threats, (3) ethical considerations I may have missed.</div>
+  </div>
+
+  <div class="prompt-example">
+    <div class="prompt-label">Choose the right statistical test</div>
+    <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+    <div class="prompt-text">I have the following data: [describe variables, types, distribution if known]. My research question is [question]. I want to know [relationship/difference/prediction]. What statistical test is most appropriate and why? What are the assumptions I need to check?</div>
+  </div>
+
+  <div class="prompt-example">
+    <div class="prompt-label">Qualitative coding assistant</div>
+    <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+    <div class="prompt-text">I am doing thematic analysis using [approach, e.g. Braun & Clarke]. Here is a short extract from an interview transcript:
+[paste excerpt]
+
+Please suggest 3–5 initial codes that capture what is happening in this excerpt. Do not interpret — just label. I will do the interpretation myself.</div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     TAB 5 — GRANT WRITING
+════════════════════════════════════════ -->
+<div id="tab-grant" class="tab-panel">
+  <div class="section-intro">
+    <div class="eyebrow">Tab 05 — Grant Writing</div>
+    <h1 class="section-title">The tab that <em>doesn't exist</em><br>in any other course.</h1>
+    <p class="section-desc">Grant writing is almost entirely absent from AI-for-researchers curricula. That's a missed opportunity. AI is genuinely useful here — for structure, language, and anticipating reviewer objections.</p>
+  </div>
+
+  <div class="callout green">
+    <div class="callout-title">Where AI actually helps</div>
+    <div class="callout-body">AI won't write a winning grant for you — reviewers notice generic prose. But it's great for drafting the <strong>impact statement</strong>, sharpening the <strong>significance section</strong>, writing the <strong>lay summary</strong>, and stress-testing your logic by playing devil's advocate.</div>
+  </div>
+
+  <div class="card-grid">
+    <div class="card">
+      <span class="card-chip chip-green">High value</span>
+      <span class="card-icon">📝</span>
+      <div class="card-title">Lay summaries</div>
+      <div class="card-body">Turn your technical abstract into plain language for non-specialist panels or public outreach sections. Huge time saver, and AI is genuinely good at this.</div>
+    </div>
+    <div class="card">
+      <span class="card-chip chip-green">High value</span>
+      <span class="card-icon">🎯</span>
+      <div class="card-title">Significance & impact</div>
+      <div class="card-body">Describe your project and ask AI to draft an impact section. Use it as a starting point, then add specific context, partners, and outcomes that only you know.</div>
+    </div>
+    <div class="card">
+      <span class="card-chip chip-amber">Medium value</span>
+      <span class="card-icon">🔁</span>
+      <div class="card-title">Devil's advocate</div>
+      <div class="card-body">Paste your research plan and ask "what would a sceptical reviewer object to?" This surfaces weak spots before the panel does. Genuinely useful.</div>
+    </div>
+    <div class="card">
+      <span class="card-chip chip-amber">Medium value</span>
+      <span class="card-icon">📋</span>
+      <div class="card-title">Work plan & timeline</div>
+      <div class="card-body">Give AI your project phases and ask it to generate a Gantt-style work plan breakdown or draft the work package descriptions. Edit heavily.</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="prompt-section">
+    <div class="prompt-section-title">Grant prompt templates</div>
+
+    <div class="prompt-example">
+      <div class="prompt-label">Write a lay summary</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">Here is the abstract of my research project:
+[paste abstract]
+
+Please rewrite this as a 150-word lay summary for a non-specialist audience (e.g. a research council panel including non-experts). It should be engaging, jargon-free, and clearly explain why this research matters to society.</div>
+    </div>
+
+    <div class="prompt-example">
+      <div class="prompt-label">Strengthen impact section</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">Here is my current impact/significance section:
+[paste text]
+
+My funder is [funder name, e.g. NWO / ERC / Horizon Europe]. Please suggest specific ways to strengthen this section in terms of: (1) clarity of contribution, (2) societal relevance, (3) how well it speaks to this funder's stated priorities.</div>
+    </div>
+
+    <div class="prompt-example">
+      <div class="prompt-label">Anticipate reviewer objections</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">Here is my research proposal:
+[paste proposal or key sections]
+
+Please act as a sceptical but fair peer reviewer. List the 5 most likely objections a reviewer would raise — about feasibility, novelty, methodology, or impact. For each objection, suggest how I could pre-emptively address it in the proposal.</div>
+    </div>
+
+    <div class="prompt-example">
+      <div class="prompt-label">Draft a work plan</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">My project has the following phases:
+[list phases and rough durations]
+
+The project runs for [X months/years]. Please draft a work plan description with work packages (WP1, WP2...), each with objectives, activities, deliverables, and responsible team members. I'll fill in the specific names and deliverables.</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     TAB 6 — PLAYGROUND
+════════════════════════════════════════ -->
+<div id="tab-playground" class="tab-panel">
+  <div class="section-intro">
+    <div class="eyebrow">Tab 06 — Prompting Playground</div>
+    <h1 class="section-title">Learn by <em>doing.</em><br>Break things. Try stuff.</h1>
+    <p class="section-desc">This is your sandbox. Write any prompt, load one of the exercises below, and see what Claude does with it. The best way to get good at prompting is to experiment — not read about it.</p>
+  </div>
+
+  <div class="callout blue">
+    <div class="callout-title">What makes a good research prompt?</div>
+    <div class="callout-body">
+      <strong>Role</strong> — tell it who it is (<em>"Act as a methods reviewer..."</em>)<br>
+      <strong>Context</strong> — give it your situation (<em>"I'm a PhD student in cognitive psychology..."</em>)<br>
+      <strong>Task</strong> — be specific about what you want (<em>"give me 5 alternative framings..."</em>)<br>
+      <strong>Format</strong> — say how you want the answer (<em>"bullet points, max 150 words"</em>)<br>
+      <strong>Constraint</strong> — limit what it does (<em>"do not rewrite my text, only give feedback"</em>)
+    </div>
+  </div>
+
+  <div class="ai-box">
+    <div class="ai-box-header">
+      <div class="ai-dot"></div>
+      <div class="ai-box-title">Prompting Playground · Claude API</div>
+    </div>
+    <div class="ai-body">
+      <div class="api-key-row">
+        <span class="api-key-label">API key</span>
+        <input type="password" class="api-key-input" id="pg-api-key" placeholder="sk-ant-api03-..." />
+      </div>
+
+      <div class="system-row">
+        <span class="input-label">Load a prompting exercise</span>
+        <div class="pg-mode-row" id="pg-mode-row">
+          <button class="mode-btn active" onclick="loadPGPreset('blank', this)">Blank</button>
+          <button class="mode-btn" onclick="loadPGPreset('vague', this)">Fix a vague prompt</button>
+          <button class="mode-btn" onclick="loadPGPreset('role', this)">Role prompting</button>
+          <button class="mode-btn" onclick="loadPGPreset('cot', this)">Chain of thought</button>
+          <button class="mode-btn" onclick="loadPGPreset('critique', this)">Self-critique loop</button>
+          <button class="mode-btn" onclick="loadPGPreset('few-shot', this)">Few-shot examples</button>
+        </div>
+      </div>
+
+      <div class="system-row">
+        <label class="input-label" for="pg-system">System prompt (who Claude is / what context it has)</label>
+        <textarea class="system-textarea" id="pg-system" rows="3" placeholder="e.g. You are a rigorous but supportive thesis advisor for PhD students in social science. You give direct, constructive feedback without sugarcoating."></textarea>
+      </div>
+
+      <label class="input-label" for="pg-prompt">Your prompt</label>
+      <textarea class="prompt-textarea" id="pg-prompt" rows="6" placeholder="Write your prompt here. Try being specific — role, context, task, format, constraint..."></textarea>
+
+      <div class="ai-controls">
+        <button class="run-btn" id="pg-run-btn" onclick="runAI('pg')">▶ Run prompt</button>
+        <button class="clear-btn" onclick="clearAI('pg')">Clear</button>
+        <span class="token-note">max 1000 tokens · nothing is saved</span>
+      </div>
+
+      <div class="ai-response" id="pg-response">
+        <div class="response-label">Response</div>
+        <div class="response-text" id="pg-response-text"></div>
+      </div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="prompt-section-title">Prompting concepts — quick reference</div>
+
+  <div class="concept-row">
+    <div class="concept-card">
+      <div class="concept-title">Zero-shot prompting</div>
+      <div class="concept-body">Give the task directly, no examples. Works well for simple, well-defined tasks. <em>"Summarise this abstract in 2 sentences."</em></div>
+      <div class="concept-fit"><span class="fit-badge fit-high">Simple tasks</span></div>
+    </div>
+    <div class="concept-card">
+      <div class="concept-title">Few-shot prompting</div>
+      <div class="concept-body">Give 2–3 examples of what you want before the actual task. Dramatically improves consistency for formatting and tone.</div>
+      <div class="concept-fit"><span class="fit-badge fit-high">Formatting · Coding</span></div>
+    </div>
+    <div class="concept-card">
+      <div class="concept-title">Chain of thought</div>
+      <div class="concept-body">Ask the model to "think step by step" before answering. Improves performance on complex reasoning and multi-step problems.</div>
+      <div class="concept-fit"><span class="fit-badge fit-medium">Complex reasoning</span></div>
+    </div>
+    <div class="concept-card">
+      <div class="concept-title">Role prompting</div>
+      <div class="concept-body">Assign an identity: "You are a methods reviewer for Nature." Shifts the model's framing and often improves domain-specific responses.</div>
+      <div class="concept-fit"><span class="fit-badge fit-high">Domain expertise</span></div>
+    </div>
+    <div class="concept-card">
+      <div class="concept-title">Self-critique loop</div>
+      <div class="concept-body">After getting a response, prompt: "Now critique what you just wrote. What's weak or missing?" Then ask for a revised version.</div>
+      <div class="concept-fit"><span class="fit-badge fit-medium">Quality improvement</span></div>
+    </div>
+    <div class="concept-card">
+      <div class="concept-title">Constraint prompting</div>
+      <div class="concept-body">Explicitly tell it what NOT to do. <em>"Do not rewrite my text. Only identify logical gaps."</em> Stops AI from overstepping.</div>
+      <div class="concept-fit"><span class="fit-badge fit-high">Feedback tasks</span></div>
+    </div>
+  </div>
+
+  <div class="prompt-section">
+    <div class="prompt-section-title">Copy-and-modify prompt starters</div>
+    <div class="prompt-example">
+      <div class="prompt-label">Role + task + constraint</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">You are a senior researcher in [field]. I am going to give you a paragraph from my introduction. Your task is to give me feedback on the logical structure only — do not rewrite it, do not comment on grammar. Just tell me where the argument is unclear or unsupported.
+
+Paragraph:
+[paste here]</div>
+    </div>
+    <div class="prompt-example">
+      <div class="prompt-label">Chain of thought for method choice</div>
+      <button class="copy-btn" onclick="copyPrompt(this)">copy</button>
+      <div class="prompt-text">Think step by step. My research question is: [question]. My data is: [describe]. 
+
+Step 1: What are the three most appropriate statistical tests for this situation?
+Step 2: For each, what are the key assumptions?
+Step 3: Which do you recommend and why?</div>
+    </div>
+  </div>
+
+  <div class="foot-note">LabLLM · made for PhD students & postdocs · content grounded in Nordic/EU AI-for-researchers curriculum landscape · prompts are sent to Anthropic's API · no data is stored</div>
+</div>
+
+</main>
+
+<script>
+// ─── TAB SWITCHING ───
+function switchTab(id) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ─── COPY BUTTON ───
+function copyPrompt(btn) {
+  const text = btn.parentElement.querySelector('.prompt-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'copied ✓';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 1800);
+  });
+}
+
+// ─── VIZ PRESETS ───
+const vizPresets = {
+  scatter: {
+    system: "I'm working in Python with a pandas DataFrame called df. It has columns: x (float), y (float), group (str: 'A'/'B'/'C').",
+    prompt: "Create a scatter plot of x vs y, coloured by group. Use seaborn, theme_minimal equivalent, a colourblind-safe palette, and make it publication-ready with axis labels."
+  },
+  ggplot: {
+    system: "I'm working in R. My dataframe is called df with columns: category (chr), value (num), condition (chr: 'pre'/'post').",
+    prompt: "Create a grouped bar chart in ggplot2 showing mean value per category, split by condition. Use theme_minimal(), error bars (SE), and a clean colour palette suitable for print."
+  },
+  heatmap: {
+    system: "I have a pandas DataFrame df with 8 numeric columns representing survey scale items.",
+    prompt: "Generate a correlation heatmap using seaborn. Show correlation coefficients in each cell, use a diverging colour scale centred at 0, and make it publication-ready."
+  },
+  explain: {
+    system: "You are a statistics tutor for PhD students. Explain output clearly, use plain language, and always say how to report results in APA format.",
+    prompt: "Here is the output from a linear regression in R:\n\nCall:\nlm(formula = score ~ age + group, data = df)\n\nCoefficients:\n            Estimate Std. Error t value Pr(>|t|)    \n(Intercept)  45.230      3.112  14.534  < 2e-16 ***\nage           0.312      0.089   3.506  0.00051 ***\ngroupB       -4.210      1.203  -3.500  0.00054 ***\n\nResidual standard error: 8.45 on 197 degrees of freedom\nMultiple R-squared: 0.312, Adjusted R-squared: 0.305\n\nPlease explain what each coefficient means and how to report this in APA format."
+  }
+};
+
+function loadVizPreset(key) {
+  const p = vizPresets[key];
+  document.getElementById('viz-system').value = p.system;
+  document.getElementById('viz-prompt').value = p.prompt;
+}
+
+// ─── PLAYGROUND PRESETS ───
+const pgPresets = {
+  blank: { system: '', prompt: '' },
+  vague: {
+    system: 'You are a prompting coach helping PhD students improve their AI prompts.',
+    prompt: 'Help me improve this vague prompt so it gets better results:\n\n"Tell me about my research topic."'
+  },
+  role: {
+    system: 'You are a senior methodologist in qualitative research with 20 years of experience reviewing PhD dissertations.',
+    prompt: 'I am about to defend my choice to use thematic analysis rather than grounded theory for my study on [topic]. Give me three likely questions a committee member might ask, and for each, give me a strong response I can prepare.'
+  },
+  cot: {
+    system: 'Think carefully and step by step before answering.',
+    prompt: 'My research question is: "How does social media use affect academic motivation among PhD students?" \n\nStep 1: What are the main theoretical frameworks I should consider?\nStep 2: What are the key methodological choices?\nStep 3: What would be the most important gap to address?'
+  },
+  critique: {
+    system: 'You are a rigorous peer reviewer for a top journal in social science.',
+    prompt: 'Here is my abstract:\n\n"This study examines the relationship between sleep quality and academic performance in PhD students using a longitudinal survey design with 150 participants. Results show a significant positive correlation."\n\nFirst, list everything that is good about this abstract. Then, list every weakness or missing element. Finally, write a revised version.'
+  },
+  'few-shot': {
+    system: 'You help researchers write concise, jargon-free section titles.',
+    prompt: 'Here are examples of what I want:\n\nOriginal: "Theoretical Framework and Conceptual Underpinnings"\nImproved: "Theoretical Framework"\n\nOriginal: "Methodological Approach and Research Design Considerations"\nImproved: "Research Design"\n\nNow improve these:\n1. "Data Collection Procedures and Participant Recruitment Strategies"\n2. "Results, Findings, and Analysis of the Empirical Data"\n3. "Discussion, Implications, and Directions for Future Research"'
+  }
+};
+
+function loadPGPreset(key, btn) {
+  const p = pgPresets[key];
+  document.getElementById('pg-system').value = p.system;
+  document.getElementById('pg-prompt').value = p.prompt;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ─── RUN AI ───
+async function runAI(prefix) {
+  const apiKey = document.getElementById(prefix + '-api-key').value.trim();
+  const system = document.getElementById(prefix + '-system').value.trim();
+  const prompt = document.getElementById(prefix + '-prompt').value.trim();
+  const responseDiv = document.getElementById(prefix + '-response');
+  const responseText = document.getElementById(prefix + '-response-text');
+  const runBtn = document.getElementById(prefix + '-run-btn');
+
+  if (!apiKey) { alert('Please enter your Anthropic API key first.'); return; }
+  if (!prompt) { alert('Please enter a prompt.'); return; }
+
+  runBtn.disabled = true;
+  runBtn.textContent = '⏳ Running…';
+  responseDiv.classList.add('visible');
+  responseText.classList.add('loading');
+  responseText.textContent = 'Sending request to Claude…';
+
+  const messages = [{ role: 'user', content: prompt }];
+  const body = {
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1000,
+    messages
+  };
+  if (system) body.system = system;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify(body)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      responseText.classList.remove('loading');
+      responseText.textContent = `Error ${res.status}: ${data.error?.message || JSON.stringify(data)}`;
+    } else {
+      responseText.classList.remove('loading');
+      responseText.textContent = data.content?.map(b => b.text || '').join('') || '(no response)';
+    }
+  } catch (err) {
+    responseText.classList.remove('loading');
+    responseText.textContent = 'Network error: ' + err.message;
+  } finally {
+    runBtn.disabled = false;
+    runBtn.textContent = '▶ Run' + (prefix === 'pg' ? ' prompt' : '');
+  }
+}
+
+// ─── CLEAR ───
+function clearAI(prefix) {
+  document.getElementById(prefix + '-prompt').value = '';
+  document.getElementById(prefix + '-system').value = '';
+  const r = document.getElementById(prefix + '-response');
+  r.classList.remove('visible');
+  document.getElementById(prefix + '-response-text').textContent = '';
+  if (prefix === 'pg') {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.mode-btn').classList.add('active');
+  }
+}
+</script>
+
+</body>
+</html>
